@@ -1,0 +1,30 @@
+.mapboxgl-ctrl-attrib {
+    display: none;
+}
+
+img {
+    position: relative;
+    margin-top: 5px;
+    margin-left: 5px;
+    z-index: 1;
+    width: 215px;
+}
+
+.fa {
+    padding-right: 15px;
+}
+
+h4 {
+    font-size: 1.2em;
+    font-weight: 400;
+}
+
+#legend {
+    position: relative;
+    margin-bottom: 0px;
+    margin-right: 0px;
+    z-index: 1;
+    width: 200px;
+    margin-left: 15px;
+    margin-top: 20px;
+}
