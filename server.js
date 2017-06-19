@@ -16,11 +16,11 @@ app.use(bodyParser.urlencoded({extended:true}));
 app.use("/",index);
 
 // // HEROKU
-app.listen(process.env.PORT, process.env.IP, function(){
-   console.log("Heroku Server Started");
-});
+//app.listen(process.env.PORT, process.env.IP, function(){
+//   console.log("Heroku Server Started");
+//});
 
 // LOCAL HOST
-// app.listen(3000,function(){
-// 	console.log("Server Started on PORT 3000");
-// })
+app.listen(3000,function(){
+	console.log("Server Started on PORT 3000");
+})
