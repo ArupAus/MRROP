@@ -15,7 +15,7 @@ import json
 import sys
 import math
 from shapely.geometry import Point, shape
-from shapely.geometry.polygon import Polygon
+from geojson import Feature, FeatureCollection, Polygon,dump,loads
 
 def getSegments():
     ranges = {}
@@ -30,70 +30,19 @@ def getSegments():
     df = pd.DataFrame(ranges)
     df.to_json('.\GIS\SLK_json.json')
 
-def averageSegments2():
+def averageSegments(out_perth, into_perth, road_name, output):
     ranges = pd.read_json('.\GIS\SLK_json.json', orient='index')
-    there = pd.read_csv(".\\20170607_AM_PEAK_Albany_Hwy\\20170607.csv")
-    returning = pd.read_csv(".\\20170607_AM_PEAK_Albany_Hwy\\20170607-return.csv")
-    ranges['there_sum'] = 0
-    ranges['there_total'] = 0 
-    ranges['return_sum'] = 0
-    ranges['return_total'] = 0
+    slks = pd.read_json('.\GIS\SLK_'+road_name+'.geojson')
+    features = []
+    there = pd.read_csv(out_perth)
+    returning = pd.read_csv(into_perth)
+    ranges['from_perth_sum'] = 0
+    ranges['from_perth_total'] = 0 
+    ranges['to_perth_sum'] = 0
+    ranges['to_perth_total'] = 0
 
     
-    for index,row in ranges.iterrows():        
-        
-        for index2, point in there.iterrows():
-            if row['end_lat'] >= row['start_lat'] and row['end_long'] <= row['start_long']:
-                if float(point['lat']) >= float(row['start_lat']) and float(point['lon']) <= float(row['start_long']) and float(point['lat']) <= float(row['end_lat']) and float(point['lon']) >= float(row['end_long']):
-                    ranges = therepointSum(point,ranges,index)
-            if row['end_lat'] <= row['start_lat'] and row['end_long'] >= row['start_long']:
-                if float(point['lat']) <= float(row['start_lat']) and float(point['lon']) >= float(row['start_long']) and float(point['lat']) >= float(row['end_lat']) and float(point['lon']) <= float(row['end_long']):
-                    ranges = therepointSum(point,ranges,index) 
-            if row['end_lat'] <= row['start_lat'] and row['end_long'] <= row['start_long']:
-                if float(point['lat']) <= float(row['start_lat']) and float(point['lon']) <= float(row['start_long']) and float(point['lat']) >= float(row['end_lat']) and float(point['lon']) >= float(row['end_long']):
-                    ranges = therepointSum(point,ranges,index)
-            if row['end_lat'] >= row['start_lat'] and row['end_long'] >= row['start_long']:
-                if float(point['lat']) >= float(row['start_lat']) and float(point['lon']) >= float(row['start_long']) and float(point['lat']) <= float(row['end_lat']) and float(point['lon']) <= float(row['end_long']):
-                    ranges = therepointSum(point,ranges,index)
-        
-        for index3, point in returning.iterrows():
-            
-            if row['end_lat'] >= row['start_lat'] and row['end_long'] <= row['start_long']:
-                if float(point['lat']) >= float(row['start_lat']) and float(point['lon']) <= float(row['start_long']) and float(point['lat']) <= float(row['end_lat']) and float(point['lon']) >= float(row['end_long']):
-                    ranges = returnpointSum(point,ranges,index)
-            if row['end_lat'] <= row['start_lat'] and row['end_long'] >= row['start_long']:
-                if float(point['lat']) <= float(row['start_lat']) and float(point['lon']) >= float(row['start_long']) and float(point['lat']) >= float(row['end_lat']) and float(point['lon']) <= float(row['end_long']):
-                    ranges = returnpointSum(point,ranges,index) 
-            if row['end_lat'] <= row['start_lat'] and row['end_long'] <= row['start_long']:
-                if float(point['lat']) <= float(row['start_lat']) and float(point['lon']) <= float(row['start_long']) and float(point['lat']) >= float(row['end_lat']) and float(point['lon']) >= float(row['end_long']):
-                    ranges = returnpointSum(point,ranges,index)
-            if row['end_lat'] >= row['start_lat'] and row['end_long'] >= row['start_long']:
-                if float(point['lat']) >= float(row['start_lat']) and float(point['lon']) >= float(row['start_long']) and float(point['lat']) <= float(row['end_lat']) and float(point['lon']) <= float(row['end_long']):
-                    ranges = returnpointSum(point,ranges,index)
-            
-                
-    for index,row in ranges.iterrows():
-        if row['there_sum']> 0 and row['there_total'] > 0 :
-            ranges.set_value(index,'there_average', ranges['there_sum'][index] / ranges['there_total'][index])
-        if row['return_sum']> 0 and row['return_total'] > 0 :
-            ranges.set_value(index,'return_average', ranges['return_sum'][index] / ranges['return_total'][index])
-
-    
-    ranges.to_csv('.\\20170607_AM_PEAK_Albany_Hwy\\averages.csv')
-
-
-def averageSegments():
-    ranges = pd.read_json('.\GIS\SLK_json.json', orient='index')
-    slks = pd.read_json('.\GIS\SLK_Albany.geojson')
-    there = pd.read_csv(".\\20170607_AM_PEAK_Albany_Hwy\\20170607.csv")
-    returning = pd.read_csv(".\\20170607_AM_PEAK_Albany_Hwy\\20170607-return.csv")
-    ranges['there_sum'] = 0
-    ranges['there_total'] = 0 
-    ranges['return_sum'] = 0
-    ranges['return_total'] = 0
-
-    
-    for polygon in slks.features:
+    for slk_index, polygon in enumerate(slks.features):
         
         for index2, point in there.iterrows():
             shape_p = shape(polygon['geometry'])
@@ -102,7 +51,7 @@ def averageSegments():
             if shape_p.contains(point_p):
                 index = ranges[ranges['index']==polygon['properties']['M_Link_ID']].index.tolist()[0]
                 
-                therepointSum(polygon, point, ranges, index)
+                therepointSum(polygon, point, ranges, index,features)
 
         for index3, point in returning.iterrows():
             shape_p = shape(polygon['geometry'])
@@ -111,44 +60,87 @@ def averageSegments():
             if shape_p.contains(point_p):
                 index = ranges[ranges['index']==polygon['properties']['M_Link_ID']].index.tolist()[0]
                 
-                returnpointSum(polygon, point, ranges, index)
+                returnpointSum(polygon, point, ranges, index,features)
     
-                
     for index,row in ranges.iterrows():
-        if row['there_sum']> 0 and row['there_total'] > 0 :
-            ranges.set_value(index,'there_average', ranges['there_sum'][index] / ranges['there_total'][index])
-            ranges.set_value(index,'there_per',  ranges['there_average'][index]/  ranges['posted_speed'][index])
-        if row['return_sum']> 0 and row['return_total'] > 0 :
-            ranges.set_value(index,'return_average', ranges['return_sum'][index] / ranges['return_total'][index])
-            ranges.set_value(index,'return_per',  ranges['return_average'][index]/  ranges['posted_speed'][index])
-        if row['there_total'] == 0.0 and row['return_total'] == 0.0:
+        if row['from_perth_sum']> 0 and row['from_perth_total'] > 0 :
+            ranges.set_value(index,'from_perth_average', ranges['from_perth_sum'][index] / ranges['from_perth_total'][index])
+            ranges.set_value(index,'from_perth_per',  ranges['from_perth_average'][index]/  ranges['posted_speed'][index] * 100)
+        if row['to_perth_sum']> 0 and row['to_perth_total'] > 0 :
+            ranges.set_value(index,'to_perth_average', ranges['to_perth_sum'][index] / ranges['to_perth_total'][index])
+            ranges.set_value(index,'to_perth_per',  ranges['to_perth_average'][index]/  ranges['posted_speed'][index] * 100)
+        if row['from_perth_total'] == 0.0 and row['to_perth_total'] == 0.0:
             ranges.drop(index, inplace=True)
     
-    ranges.to_csv('.\\20170607_AM_PEAK_Albany_Hwy\\averages.csv')
+    ranges.to_csv(output+'.csv')
+    
 
-def therepointSum(polygon, point, ranges, index):
-    if not math.isnan(float(point['speed'])):
-        cursum = ranges['there_sum'][index] + float(point['speed'])*3.6      
-                                
-        ranges.set_value(index,'there_sum',cursum)    
+    with open(output + '.geojson', 'w') as outfile:
+        collection = FeatureCollection(features)
         
-        ranges.set_value(index,'there_total',ranges['there_total'][index] + 1)
+        dump(collection, outfile)
+
+def therepointSum(polygon, point, ranges, index,features):
+    
+    if not math.isnan(float(point['speed'])):
+        cursum = ranges['from_perth_sum'][index] + float(point['speed'])*3.6      
+                                
+        ranges.set_value(index,'from_perth_sum',cursum)    
+        
+        ranges.set_value(index,'from_perth_total',ranges['from_perth_total'][index] + 1)
 
         ranges.set_value(index, 'posted_speed', polygon['properties']['Avg_Posted'])
+        
+        polygon['properties']['from_perth_sum'] = cursum
+        polygon['properties']['from_perth_total'] = float(ranges['from_perth_total'][index])
+        polygon['properties']['posted_speed'] = polygon['properties']['Avg_Posted']
+        
+        p = Polygon(polygon['geometry']['coordinates'])
+        feature = Feature(geometry=p, properties=polygon['properties'])
+        exists = False
+        for index,feature_e in enumerate(features):
+            if feature.properties['M_Link_ID'] == feature_e.properties['M_Link_ID']:
+                exists = True
+                features[index].properties = feature.properties
+        if not exists:
+            features.append(feature)
+        
     return ranges
 
-def returnpointSum(polygon, point, ranges, index):
+def returnpointSum(polygon, point, ranges, index,features):
     if not math.isnan(float(point['speed'])):
-        cursum = ranges['return_sum'][index] + float(point['speed'])*3.6      
+        cursum = ranges['to_perth_sum'][index] + float(point['speed'])*3.6      
                         
-        ranges.set_value(index,'return_sum',cursum)    
+        ranges.set_value(index,'to_perth_sum',cursum)    
         
-        ranges.set_value(index,'return_total',ranges['return_total'][index] + 1)
+        ranges.set_value(index,'to_perth_total',ranges['to_perth_total'][index] + 1)
         ranges.set_value(index, 'posted_speed', polygon['properties']['Avg_Posted'])
+        ranges.set_value(index, 'From_Int', polygon['properties']['From_Int'])
+        ranges.set_value(index, 'To_Int', polygon['properties']['To_Int'])
+        ranges.set_value(index, 'Distance',abs(polygon['properties']['End_SLK']- polygon['properties']['Start_SLK']) )
+
+        polygon['properties']['to_perth_sum']  = cursum
+        polygon['properties']['to_perth_total'] = float(ranges['to_perth_total'][index])
+        polygon['properties']['posted_speed'] = polygon['properties']['Avg_Posted']        
+        polygon['properties']['Distance'] = abs(polygon['properties']['End_SLK']- polygon['properties']['Start_SLK'])
+        p = Polygon(polygon['geometry']['coordinates'])
+        feature = Feature(geometry=p, properties=polygon['properties'])
+        exists = False
+        for index,feature_e in enumerate(features):
+            if feature.properties['M_Link_ID'] == feature_e.properties['M_Link_ID']:
+                exists = True
+                features[index].properties = feature.properties
+        if not exists:
+            features.append(feature)
+        
     return ranges
 
 def main():
-    averageSegments()
+    averageSegments('.\\20170607_AM_PEAK_Albany_Hwy\\20170607.csv','.\\20170607_AM_PEAK_Albany_Hwy\\20170607-return.csv', 'Albany','.\\20170607_AM_PEAK_Albany_Hwy\\20170607-Albany-AM-averages')
+    averageSegments('.\\20170607_PM_Peak_Albany_Hwy\\20170607.csv','.\\20170607_PM_Peak_Albany_Hwy\\20170607-return.csv', 'Albany','.\\20170607_PM_Peak_Albany_Hwy\\20170607-Albany-PM-averages')
+    averageSegments('.\\20170608_AM_PEAK_Orrong_Road\\20170608.csv','.\\20170608_AM_PEAK_Orrong_Road\\20170608-return.csv', 'Orrong','.\\20170608_AM_PEAK_Orrong_Road\\20170608-Orrong-AM-averages')
+    averageSegments('.\\20170608_PM_PEAK_Orrong_Road\\20170608.csv','.\\20170608_PM_PEAK_Orrong_Road\\20170608-return.csv', 'Orrong','.\\20170608_PM_PEAK_Orrong_Road\\20170608-Orrong-PM-averages')
+    averageSegments('.\\20170620_AM_Albany_Hwy\\20170620.csv','.\\20170620_AM_Albany_Hwy\\20170620-return.csv', 'Albany','.\\20170620_AM_Albany_Hwy\\20170620-Albany-AM-averages')
     
 
 if __name__ == '__main__' :
