@@ -31,48 +31,25 @@
 <div id='legend'>
     <h4><i class="fa fa-circle" style='color: red' aria-hidden="true"></i>Low Speed (<30%)</h4>
     <h4><i class="fa fa-circle" style='color: darkorange' aria-hidden="true"></i>Medium-Low Speed 30-50%</h4>
-    <h4><i class="fa fa-circle" style='color: orange' aria-hidden="true"></i>Medium-High Speed 50-70%</h4>
+    <h4><i class="fa fa-circle" style='color: yellow' aria-hidden="true"></i>Medium-High Speed 50-70%</h4>
     <h4><i class="fa fa-circle" style='color: green' aria-hidden="true"></i>High Speed > 70%</h4>
     <h4>
-    <input type="checkbox" id='averages1' onclick="updateMap('20170607-Albany-AM-averages-quartile.geojson')"/>
-    Albany Highway - 2017-06-07 AM - From Perth
-    </h4>
-    <h4>
-    <input type="checkbox" id='averages2' onclick="updateMap('20170607-Albany-PM-averages-quartile.geojson')"/>
-    Albany Highway - 2017-06-07 PM - From Perth
-    </h4>
-    <h4>
-    <input type="checkbox" id='averages3' onclick="updateMap('20170608-Orrong-AM-averages-quartile.geojson')"/>
-    Orrong Road - 2017-06-08 AM - From Perth
-    </h4>
-    <h4>
-    <input type="checkbox" id='averages4' onclick="updateMap('20170608-Orrong-PM-averages-quartile.geojson')"/>
-    Orrong Road - 2017-06-08 PM - From Perth
-    </h4>
-    <h4>
-    <input type="checkbox" id='averages5' onclick="updateMap('20170620-Albany-AM-averages-quartile.geojson')"/>
-    Albany Highway - 2017-06-20 AM - From Perth
-    </h4>
-    <h4>
-    <input type="checkbox" id='averages6' onclick="updatetoMap('20170607-Albany-AM-averages-quartile.geojson')"/>
-    Albany Highway - 2017-06-07 AM - To Perth
-    </h4>
-    <h4>
-    <input type="checkbox" id='averages7' onclick="updatetoMap('20170607-Albany-PM-averages-quartile.geojson')"/>
-    Albany Highway - 2017-06-07 PM - To Perth
-    </h4>
-    <h4>
-    <input type="checkbox" id='averages8' onclick="updatetoMap('20170608-Orrong-AM-averages-quartile.geojson')"/>
-    Orrong Road - 2017-06-08 AM - To Perth
-    </h4>
-    <h4>
-    <input type="checkbox" id='averages9' onclick="updatetoMap('20170608-Orrong-PM-averages-quartile.geojson')"/>
-    Orrong Road - 2017-06-08 PM - To Perth
-    </h4>
-    <h4>
-    <input type="checkbox" id='averages10' onclick="updatetoMap('20170620-Albany-AM-averages-quartile.geojson')"/>
-    Albany Highway - 2017-06-20 AM - To Perth
-    </h4>
+
+
+    <select name="datasets" id="selector" onchange="updateMap(document.getElementById('selector'))">
+        <option value="" >Select a Run</option>
+        <option value="from 20170607-Albany-AM-averages-quartile.geojson">Albany Highway - 2017-06-07 AM - From Perth</option>
+        <option value="from 20170607-Albany-PM-averages-quartile.geojson">Albany Highway - 2017-06-07 PM - From Perth</option>
+        <option value="from 20170608-Orrong-AM-averages-quartile.geojson">Orrong Road - 2017-06-08 AM - From Perth</option>
+        <option value="from 20170608-Orrong-PM-averages-quartile.geojson">Orrong Road - 2017-06-08 PM - From Perth</option>
+        <option value="from 20170620-Albany-AM-averages-quartile.geojson">Albany Highway - 2017-06-20 AM - From Perth</option>
+        <option value="to 20170607-Albany-AM-averages-quartile.geojson">Albany Highway - 2017-06-07 AM - To Perth</option>
+        <option value="to 20170607-Albany-PM-averages-quartile.geojson">Albany Highway - 2017-06-07 PM - To Perth</option>
+        <option value="to 20170608-Orrong-AM-averages-quartile.geojson">Orrong Road - 2017-06-08 AM - To Perth</option>
+        <option value="to 20170608-Orrong-PM-averages-quartile.geojson">Orrong Road - 2017-06-08 PM - To Perth</option>
+        <option value="to 20170620-Albany-AM-averages-quartile.geojson">Albany Highway - 2017-06-20 AM - To Perth</option>
+    </select>    
+    
 </div>
 
 <script>
@@ -125,7 +102,7 @@ map.on('load', function () {
         },
         'paint': {
             'circle-radius': circleRadius,
-            'circle-color': 'orange'
+            'circle-color': 'yellow'
         }
     });
     map.addLayer({
@@ -147,8 +124,40 @@ map.on('load', function () {
 
 });
 
-function updateMap(filename){
-    if(document.getElementById('averages1').checked || document.getElementById('averages2').checked || document.getElementById('averages3').checked || document.getElementById('averages4').checked || document.getElementById('averages5').checked){
+function updateMap(e){
+    var value = e.options[e.selectedIndex].value.split(" ");
+    var tofrom = value[0];
+    var selectedvalue = value[1];
+    console.log(tofrom)
+    if (tofrom == "from"){
+        updatefromMap(selectedvalue);
+    }
+    if (tofrom == "to"){
+        updatetoMap(selectedvalue);
+    }
+}
+
+function updatefromMap(filename){
+        try {
+            map.removeLayer('from-perth-high')
+            map.removeSource('from-perth-high')
+            map.removeLayer('from-perth-medhigh')
+            map.removeSource('from-perth-medhigh')
+            map.removeLayer('from-perth-medlow')
+            map.removeSource('from-perth-medlow')
+            map.removeLayer('from-perth-low')
+            map.removeSource('from-perth-low')
+            map.removeLayer('to-perth-high')
+            map.removeSource('to-perth-high')
+            map.removeLayer('to-perth-medhigh')
+            map.removeSource('to-perth-medhigh')
+            map.removeLayer('to-perth-medlow')
+            map.removeSource('to-perth-medlow')
+            map.removeLayer('to-perth-low')
+            map.removeSource('to-perth-low')
+        }catch(e){
+
+        }
         map.addLayer({
             'id': 'from-perth-high',
             'type': 'fill',
@@ -171,7 +180,7 @@ function updateMap(filename){
                 data: filename
             }),
             'paint': {            
-                'fill-color': 'orange'
+                'fill-color': 'yellow'
             }
         });
 
@@ -203,21 +212,33 @@ function updateMap(filename){
 
         removePoints()
         
-    }else{
-        map.removeLayer('from-perth-high')
-        map.removeSource('from-perth-high')
-        map.removeLayer('from-perth-medhigh')
-        map.removeSource('from-perth-medhigh')
-        map.removeLayer('from-perth-medlow')
-        map.removeSource('from-perth-medlow')
-        map.removeLayer('from-perth-low')
-        map.removeSource('from-perth-low')
+    
         
-    }
+        
+    
 }
 
 function updatetoMap(filename){
-    if(document.getElementById('averages6').checked || document.getElementById('averages7').checked || document.getElementById('averages8').checked || document.getElementById('averages9').checked || document.getElementById('averages10').checked){
+        try {
+            map.removeLayer('to-perth-high')
+            map.removeSource('to-perth-high')
+            map.removeLayer('to-perth-medhigh')
+            map.removeSource('to-perth-medhigh')
+            map.removeLayer('to-perth-medlow')
+            map.removeSource('to-perth-medlow')
+            map.removeLayer('to-perth-low')
+            map.removeSource('to-perth-low')
+            map.removeLayer('from-perth-high')
+            map.removeSource('from-perth-high')
+            map.removeLayer('from-perth-medhigh')
+            map.removeSource('from-perth-medhigh')
+            map.removeLayer('from-perth-medlow')
+            map.removeSource('from-perth-medlow')
+            map.removeLayer('from-perth-low')
+            map.removeSource('from-perth-low')
+        }catch(e){
+
+        }
         map.addLayer({
             'id': 'to-perth-high',
             'type': 'fill',
@@ -272,17 +293,7 @@ function updatetoMap(filename){
 
         removePoints()
         
-    }else{
-        map.removeLayer('to-perth-high')
-        map.removeSource('to-perth-high')
-        map.removeLayer('to-perth-medhigh')
-        map.removeSource('to-perth-medhigh')
-        map.removeLayer('to-perth-medlow')
-        map.removeSource('to-perth-medlow')
-        map.removeLayer('to-perth-low')
-        map.removeSource('to-perth-low')
-        
-    }
+    
 }
 
 function removePoints(){
