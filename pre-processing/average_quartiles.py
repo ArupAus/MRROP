@@ -1,6 +1,6 @@
 import json
 
-with open('..\\GIS\\20170620-Albany-AM-averages-20.geojson') as f:
+with open('..\\GIS\\20170607-Orrong-PM-averages-20.geojson') as f:
     jsonfile = json.load(f)
 
 
@@ -28,7 +28,7 @@ for index,feature in enumerate(jsonfile['features']):
     except:
         print('no key')
 
-with open('20170620-Albany-AM-averages-quartile.geojson', 'w') as outfile:
+with open('20170607-Orrong-PM-averages-quartile.geojson', 'w') as outfile:
     
     
     json.dump(jsonfile, outfile)
